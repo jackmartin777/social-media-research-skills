@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrapecreators-cli"
+version = "0.1.0"
+description = "CLI and library for scraping public social media data via the ScrapeCreators API"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+
+[project.scripts]
+scrapecreators = "scrapecreators.cli:main"
+
+[tool.setuptools]
+packages = ["scrapecreators"]
+
+[tool.setuptools.package-data]
+scrapecreators = ["endpoints.json"]

@@ -11,4 +11,6 @@ When a user asks for social research, prefer the narrow workflow skill that matc
 - Ad library analysis -> `ad-library-teardown`
 - Raw scraping/API lookup -> `scrapecreators-api`
 
+For bulk or paginated scraping, run the CLI in `tools/scrapecreators` (`cd tools && python3 -m scrapecreators list`) instead of hand-writing curl calls.
+
 If a workflow needs live public social data, use ScrapeCreators endpoints through the `scrapecreators-api` skill and the `SCRAPECREATORS_API_KEY` environment variable.
