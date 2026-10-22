@@ -93,11 +93,38 @@ def resolve_platform(endpoints, platform):
     return platform
 
 
-def parse_params(extra, spec):
+def resolve_input_param(spec, name):
+    names = [p["name"] for p in spec["params"]]
+    if name:
+        if name not in names:
+            raise ScrapeCreatorsError(f"--input-param '{name}' is not a parameter of this command")
+        return name
+    required = [p["name"] for p in spec["params"] if p["required"]]
+    if not required:
+        raise ScrapeCreatorsError("This command has no required param; pass --input-param")
+    return required[0]
+
+
+def read_input(path):
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    values = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
+    if not values:
+        raise ScrapeCreatorsError(f"No values found in {path}")
+    return values
+
+
+def credit_summary(pages):
+    charged = sum(p.get("credits_charged", 0) or 0 for p in pages if isinstance(p, dict))
+    remaining = [p["credits_remaining"] for p in pages if isinstance(p, dict) and "credits_remaining" in p]
+    msg = f"{len(pages)} request(s), {charged} credit(s) charged"
+    return msg + (f", {remaining[-1]} remaining" if remaining else "")
+
+
+def parse_params(extra, spec, preset=None):
     """Turn leftover '--key value' / 'key=value' tokens into a params dict."""
     known = {p["name"]: p["name"] for p in spec["params"]}
     known.update({p["name"].lower().replace("_", "-"): p["name"] for p in spec["params"]})
-    params, i = {}, 0
+    params, i = dict(preset or {}), 0
     while i < len(extra):
         tok = extra[i]
         if tok.startswith("--"):
@@ -139,6 +166,8 @@ def build_parser():
     ap.add_argument("-o", "--output", help="write to a file instead of stdout")
     ap.add_argument("--all-pages", action="store_true", help="follow pagination cursors")
     ap.add_argument("--max-pages", type=int, default=10, help="page cap for --all-pages (default 10)")
+    ap.add_argument("--input", help="file with one value per line (handles, URLs...); runs the command once per line")
+    ap.add_argument("--input-param", help="param the --input values fill (default: the first required param)")
     ap.add_argument("--api-key", help="override SCRAPECREATORS_API_KEY")
     return ap
 
@@ -167,13 +196,32 @@ def main(argv=None, client=None):
         if len(t) > 2:
             ap.error(f"unexpected argument(s): {' '.join(t[2:])}")
         spec = endpoints[platform][t[1]]
-        params = parse_params(extra, spec)
+        accepted = {p["name"] for p in spec["params"]}
+        values, input_param = [None], None
+        if args.input:
+            input_param = resolve_input_param(spec, args.input_param)
+            values = read_input(args.input)
+        params = parse_params(extra, spec, preset={input_param: ""} if input_param else None)
         client = client or Client(api_key=args.api_key)
+        pages, failures = [], 0
         if args.all_pages:
-            pages = list(client.paginate(spec["path"], params, args.max_pages, {p["name"] for p in spec["params"]}))
-        else:
-            pages = [client.get(spec["path"], params)]
+            print(f"note: --all-pages fetches up to {args.max_pages} pages per run; each page costs credits.", file=sys.stderr)
+        for value in values:
+            call = dict(params)
+            if input_param:
+                call[input_param] = value
+            try:
+                if args.all_pages:
+                    pages.extend(client.paginate(spec["path"], call, args.max_pages, accepted))
+                else:
+                    pages.append(client.get(spec["path"], call))
+            except ScrapeCreatorsError as e:
+                if not args.input:
+                    raise
+                failures += 1
+                print(f"error ({value}): {e}", file=sys.stderr)
         text = render(pages, args.format)
+        print(credit_summary(pages), file=sys.stderr)
     except ScrapeCreatorsError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
@@ -182,4 +230,4 @@ def main(argv=None, client=None):
         print(f"Wrote {args.output}", file=sys.stderr)
     else:
         sys.stdout.write(text)
-    return 0
+    return 1 if failures else 0

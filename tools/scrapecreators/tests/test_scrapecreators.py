@@ -117,6 +117,24 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(len(lines), 4)  # header + 3 rows
         self.assertIn("user.name", lines[0])
 
+    def test_batch_input(self):
+        import tempfile
+
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("# comment\nalice\n\nbob\n")
+        code, out, err = self.run_cli("tiktok", "profile", "--input", f.name, "--input-param", "handle")
+        self.assertEqual(code, 0)
+        self.assertEqual([r[1]["handle"] for r in REQUESTS], ["alice", "bob"])
+        self.assertIn("2 request(s)", err)
+
+    def test_batch_defaults_to_first_required_param(self):
+        import tempfile
+
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("u1\nu2\n")
+        self.assertEqual(self.run_cli("tiktok", "profile-videos", "--input", f.name)[0], 0)
+        self.assertEqual([r[1]["handle"] for r in REQUESTS], ["u1", "u2"])
+
     def test_list_and_describe(self):
         self.assertEqual(self.run_cli("list")[0], 0)
         self.assertIn("profile", self.run_cli("list", "tiktok")[1])

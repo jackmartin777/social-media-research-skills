@@ -27,7 +27,16 @@ python3 -m scrapecreators reddit post-comments --url https://www.reddit.com/r/..
 - Aliases: `x`=twitter, `tt`=tiktok, `ig`=instagram, `yt`=youtube, `fb`=facebook.
 - `--all-pages` follows the response's pagination token (`cursor`, `max_cursor`, `continuationToken`, etc.), up to `--max-pages` (default 10). Each page costs credits.
 - `--format json|jsonl|csv`. jsonl and csv extract the main list of records from the response, and csv flattens nested fields.
+- Batch mode: `--input handles.txt` runs the command once per line (blank lines and `#` comments are skipped). Lines fill the first required param, or the one named by `--input-param`. Failed lines are reported on stderr and the rest continue (exit code 1 at the end).
+- After each run, a summary of requests, credits charged and credits remaining goes to stderr. `--all-pages` also prints a reminder that every page costs credits.
 - Errors go to stderr and the exit code is 1. 429 and 5xx responses are retried with backoff.
+
+## Install as a command (optional)
+
+```bash
+cd tools && python3 -m pip install .
+scrapecreators tiktok profile --handle charlidamelio
+```
 
 ## As a library
 
