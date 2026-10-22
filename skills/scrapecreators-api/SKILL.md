@@ -73,6 +73,10 @@ const data = await res.json();
 
 Endpoint paths use the pattern `/v1/platform/action`. The tables below list each endpoint path and its required params.
 
+### CLI shortcut
+
+If the repo's `tools/scrapecreators` CLI is available, it can make the call, paginate and export CSV/JSONL: `cd tools && python3 -m scrapecreators <platform> <command> --param value [--all-pages] [--format csv]`. Use `describe <platform> <command>` for params.
+
 ### API Spec
 
 Each endpoint has its own OpenAPI spec at `https://docs.scrapecreators.com/{path}/openapi.json`.

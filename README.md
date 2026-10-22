@@ -42,6 +42,16 @@ Get a key at [scrapecreators.com](https://scrapecreators.com).
 | [`content-repurposing`](skills/content-repurposing/) | Turn social videos, transcripts, and posts into reusable content assets | LinkedIn posts, X threads, scripts, newsletter/blog ideas |
 | [`scrapecreators-api`](skills/scrapecreators-api/) | Route a raw scraping/fetching request to the right ScrapeCreators endpoint | API calls, endpoint references, pagination guidance |
 
+## Scraping CLI
+
+Want to scrape without an agent? [`tools/scrapecreators`](tools/scrapecreators/) is a dependency-free Python CLI and library covering all ScrapeCreators endpoints, with pagination and JSON/JSONL/CSV output:
+
+```bash
+cd tools
+python3 -m scrapecreators tiktok profile --handle charlidamelio
+python3 -m scrapecreators youtube channel-videos --handle MrBeast --all-pages --format csv -o videos.csv
+```
+
 ## Example Prompts
 
 ```text
